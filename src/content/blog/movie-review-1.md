@@ -1,7 +1,7 @@
 ---
 title: 'サイコゴアマン'
 description: '宇宙１面白い映画'
-pubDate: '2026-5-12'
+pubDate: '2026-05-12'
 heroImage: '../../assets/pg.jpg'
 ---
 
