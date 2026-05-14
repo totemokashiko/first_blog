@@ -1,0 +1,471 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<html lang="ja">
+  <head>
+    <BaseHead title="今夜の映画を探す | ぶたの記録と夜更かし映画メモ" description="気分で映画を探せる映画レコメンドページ" />
+
+    <!-- 映画館っぽいフォント -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --bg1: #050505;
+        --bg2: #0f0f0f;
+        --surface: #141414;
+        --border: rgba(255,255,255,0.08);
+        --accent: #d4b06a;
+        --accent2: #e05c5c;
+        --text: #e8e4dc;
+        --muted: #777;
+        --selected-bg: rgba(212,176,106,0.15);
+        --selected-border: #d4b06a;
+      }
+
+      body {
+        background: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #0a0a0a 60%, #000 100%);
+        color: var(--text);
+        font-family: 'Noto Serif JP', serif;
+        min-height: 100vh;
+      }
+
+      .page-wrap {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 5rem;
+      }
+
+      .page-title {
+        font-family: 'Cinzel', serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.5rem;
+        color: var(--accent);
+        text-shadow: 0 0 12px rgba(212,176,106,0.25);
+      }
+
+      .page-sub {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-bottom: 3rem;
+        font-family: 'Cinzel', serif;
+      }
+
+      /* ステップ */
+      .step {
+        margin-bottom: 2.5rem;
+        opacity: 0;
+        transform: translateY(16px);
+        animation: fadeUp 0.5s ease forwards;
+      }
+      .step:nth-child(1) { animation-delay: 0.05s; }
+      .step:nth-child(2) { animation-delay: 0.1s; }
+      .step:nth-child(3) { animation-delay: 0.15s; }
+      .step:nth-child(4) { animation-delay: 0.2s; }
+      .step:nth-child(5) { animation-delay: 0.25s; }
+      .step:nth-child(6) { animation-delay: 0.3s; }
+      .step:nth-child(7) { animation-delay: 0.35s; }
+      .step:nth-child(8) { animation-delay: 0.4s; }
+
+      @keyframes fadeUp {
+        to { opacity: 1; transform: none; }
+      }
+
+      .step-label {
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+        font-family: 'Cinzel', serif;
+      }
+
+      .step-question {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+      }
+
+      .step-note {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 1rem;
+        font-family: 'Cinzel', serif;
+      }
+
+      /* 選択肢 */
+      .options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .option {
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        font-size: 0.88rem;
+        transition: all 0.2s;
+        user-select: none;
+      }
+
+      .option:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: 0 0 12px rgba(212,176,106,0.2);
+      }
+
+      .option.selected {
+        background: var(--selected-bg);
+        border-color: var(--selected-border);
+        color: var(--accent);
+        box-shadow: 0 0 16px rgba(212,176,106,0.25);
+      }
+
+      .options.vertical {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .options.vertical .option {
+        border-radius: 8px;
+        padding: 0.7rem 1.2rem;
+        font-size: 0.83rem;
+        line-height: 1.6;
+      }
+
+      .stimuli-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      .stimuli-item label {
+        font-size: 0.85rem;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 0.4rem;
+        font-family: 'Cinzel', serif;
+      }
+
+      .submit-wrap {
+        margin-top: 3rem;
+        text-align: center;
+      }
+
+      .btn-submit {
+        background: var(--accent);
+        color: #0a0a0a;
+        border: none;
+        padding: 1rem 3rem;
+        font-size: 1rem;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-submit:hover {
+        background: #e3c98a;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(212,176,106,0.25);
+      }
+
+      .btn-submit:active { transform: none; }
+
+      #result {
+        margin-top: 3rem;
+      }
+
+      .result-label {
+        font-size: 0.7rem;
+        color: var(--accent);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
+        font-family: 'Cinzel', serif;
+      }
+
+      .movie-card {
+        display: flex;
+        gap: 1.5rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.2rem;
+        transition: border-color 0.2s;
+      }
+
+      .movie-card:hover { border-color: rgba(212,176,106,0.3); }
+
+      .movie-card img {
+        width: 90px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        object-fit: cover;
+      }
+
+      .movie-card .no-img {
+        width: 90px;
+        height: 135px;
+        background: #1a1a1a;
+        border-radius: 6px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+      }
+
+      .movie-info h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.3rem;
+      }
+
+      .movie-meta {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-bottom: 0.6rem;
+        font-family: 'Cinzel', serif;
+      }
+
+      .movie-overview {
+        font-size: 0.85rem;
+        line-height: 1.7;
+        color: #aaa;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .movie-score {
+        margin-top: 0.6rem;
+        font-size: 0.8rem;
+        color: var(--accent);
+        font-family: 'Cinzel', serif;
+      }
+
+      .loading-text {
+        text-align: center;
+        color: var(--muted);
+        font-family: 'Cinzel', serif;
+        font-size: 0.9rem;
+        padding: 2rem;
+      }
+
+      .error-text {
+        color: var(--accent2);
+        font-family: 'Cinzel', serif;
+        font-size: 0.85rem;
+        padding: 1rem;
+      }
+
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 2rem 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <Header />
+
+    <div class="page-wrap">
+
+      <p class="page-title">🎲 今夜の映画を探す</p>
+      <p class="page-sub">// 気分を答えると映画をおすすめします</p>
+
+      <!-- Q1 気分 -->
+      <div class="step">
+        <p class="step-label">Q1</p>
+        <p class="step-question">今の気分は？</p>
+        <div class="options" id="q1">
+          <span class="option" data-q="q1" data-val="cry">泣きたい</span>
+          <span class="option" data-q="q1" data-val="refresh">スカッとしたい</span>
+          <span class="option" data-q="q1" data-val="thrill">ドキドキしたい</span>
+          <span class="option" data-q="q1" data-val="scared">怖い思いしたい</span>
+          <span class="option" data-q="q1" data-val="laugh">笑いたい・バカになりたい</span>
+          <span class="option" data-q="q1" data-val="relax">癒されたい</span>
+          <span class="option" data-q="q1" data-val="think">頭フル回転させたい</span>
+          <span class="option" data-q="q1" data-val="nothing">何も考えたくない</span>
+          <span class="option" data-q="q1" data-val="any">なんでもOK</span>
+        </div>
+      </div>
+
+      <!-- Q2 状況 -->
+      <div class="step">
+        <p class="step-label">Q2</p>
+        <p class="step-question">見る状況は？</p>
+        <div class="options" id="q2">
+          <span class="option" data-q="q2" data-val="alone">1人で夜中に</span>
+          <span class="option" data-q="q2" data-val="friends">友達と</span>
+          <span class="option" data-q="q2" data-val="lover">恋人と</span>
+          <span class="option" data-q="q2" data-val="drink">酒飲みながら</span>
+          <span class="option" data-q="q2" data-val="lazy">休日ダラダラ</span>
+          <span class="option" data-q="q2" data-val="any">気にしない</span>
+        </div>
+      </div>
+
+      <!-- Q3 種類 -->
+      <div class="step">
+        <p class="step-label">Q3</p>
+        <p class="step-question">作品の種類は？</p>
+        <div class="options" id="q3">
+          <span class="option" data-q="q3" data-val="foreign">洋画</span>
+          <span class="option" data-q="q3" data-val="japanese">邦画</span>
+          <span class="option" data-q="q3" data-val="anime_world">海外アニメ</span>
+          <span class="option" data-q="q3" data-val="anime_jp">国内アニメ</span>
+          <span class="option" data-q="q3" data-val="any">気にしない</span>
+        </div>
+      </div>
+
+      <!-- Q4 年代 -->
+      <div class="step">
+        <p class="step-label">Q4</p>
+        <p class="step-question">年代は？</p>
+        <p class="step-note">// 例はその時代を代表する映画です</p>
+        <div class="options vertical" id="q4">
+          <span class="option" data-q="q4" data-val="1979" data-year-max="1979">〜1979年（ゴッドファーザー1972・スター・ウォーズ1977・日本沈没1973）</span>
+          <span class="option" data-q="q4" data-val="1980s" data-year-min="1980" data-year-max="1989">1980年代（ブレードランナー1982・バック・トゥ・ザ・フューチャー1985・ビー・バップ・ハイスクール1985）</span>
+          <span class="option" data-q="q4" data-val="1990s" data-year-min="1990" data-year-max="1999">1990年代（ジュラシック・パーク1993・マトリックス1999・リング1998）</span>
+          <span class="option" data-q="q4" data-val="2000s" data-year-min="2000" data-year-max="2009">2000年代（ロード・オブ・ザ・リング2001・ダークナイト2008・ALWAYS 三丁目の夕日2005）</span>
+          <span class="option" data-q="q4" data-val="2010s" data-year-min="2010" data-year-max="2019">2010年代（アベンジャーズ2012・インターステラー2014・シン・ゴジラ2016）</span>
+          <span class="option" data-q="q4" data-val="2020s" data-year-min="2020">2020年代〜現在（スパイダーマン：ノー・ウェイ・ホーム2021・トップガン マーヴェリック2022・シン・ウルトラマン2022）</span>
+          <span class="option" data-q="q4" data-val="any">気にしない</span>
+        </div>
+      </div>
+
+      <!-- Q5 舞台 -->
+      <div class="step">
+        <p class="step-label">Q5</p>
+        <p class="step-question">舞台・時代設定は？</p>
+        <div class="options" id="q5">
+          <span class="option" data-q="q5" data-val="ancient">古代・神話・先史時代（恐竜・神々・古代文明）</span>
+          <span class="option" data-q="q5" data-val="history">歴史・近世（戦国・戦争・王朝）</span>
+          <span class="option" data-q="q5" data-val="modern">現代</span>
+          <span class="option" data-q="q5" data-val="nearfuture">近未来</span>
+          <span class="option" data-q="q5" data-val="scifi">SF未来（宇宙・AI・ロボット）</span>
+          <span class="option" data-q="q5" data-val="any">気にしない</span>
+        </div>
+      </div>
+
+      <!-- Q6 時間 -->
+      <div class="step">
+        <p class="step-label">Q6</p>
+        <p class="step-question">上映時間は？</p>
+        <div class="options" id="q6">
+          <span class="option" data-q="q6" data-val="60">〜60分</span>
+          <span class="option" data-q="q6" data-val="90">〜90分</span>
+          <span class="option" data-q="q6" data-val="120">〜120分</span>
+          <span class="option" data-q="q6" data-val="150">〜150分</span>
+          <span class="option" data-q="q6" data-val="over">それ以上でもOK</span>
+          <span class="option" data-q="q6" data-val="any">気にしない</span>
+        </div>
+      </div>
+
+      <!-- Q7 刺激物 -->
+      <div class="step">
+        <p class="step-label">Q7</p>
+        <p class="step-question">刺激物は？</p>
+        <div class="stimuli-grid">
+          <div class="stimuli-item">
+            <label>グロ・ゴア描写</label>
+            <div class="options" id="q7_gore">
+              <span class="option" data-q="q7_gore" data-val="ng">絶対NG</span>
+              <span class="option" data-q="q7_gore" data-val="ok">少しならOK</span>
+              <span class="option" data-q="q7_gore" data-val="welcome">むしろ歓迎</span>
+            </div>
+          </div>
+          <div class="stimuli-item">
+            <label>エロ・性描写</label>
+            <div class="options" id="q7_ero">
+              <span class="option" data-q="q7_ero" data-val="ng">絶対NG</span>
+              <span class="option" data-q="q7_ero" data-val="ok">少しならOK</span>
+              <span class="option" data-q="q7_ero" data-val="welcome">むしろ歓迎</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q8 ジャンル -->
+      <div class="step">
+        <p class="step-label">Q8</p>
+        <p class="step-question">ジャンルは？（複数選択OK）</p>
+        <div class="options" id="q8">
+          <span class="option" data-q="q8" data-val="27">ホラー</span>
+          <span class="option" data-q="q8" data-val="9648">サスペンス・ミステリー</span>
+          <span class="option" data-q="q8" data-val="28">アクション</span>
+          <span class="option" data-q="q8" data-val="878">SF</span>
+          <span class="option" data-q="q8" data-val="35">コメディ</span>
+          <span class="option" data-q="q8" data-val="18">ドラマ</span>
+          <span class="option" data-q="q8" data-val="10749">恋愛</span>
+          <span class="option" data-q="q8" data-val="any">気にしない</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="submit-wrap">
+        <button class="btn-submit" onclick="searchMovies()">🎬 映画を探す</button>
+      </div>
+
+      <div id="result"></div>
+
+    </div> <!-- /page-wrap -->
+
+    <Footer />
+
+    <script>
+    const API_KEY = '21ec4900e40b020539a7058c8a8ae56f';
+    const answers = {};
+    
+    // 全質問を複数選択にする
+    document.querySelectorAll('.option').forEach(el => {
+      el.addEventListener('click', () => {
+        const q = el.dataset.q;
+        const val = el.dataset.val;
+
+        // 初回なら配列を作る
+        if (!answers[q]) answers[q] = [];
+    
+        // ANY が押された場合
+        if (val === 'any') {
+          // ANY 以外を全部解除
+          document.querySelectorAll(`[data-q="${q}"]`).forEach(o => o.classList.remove('selected'));
+          el.classList.add('selected');
+          answers[q] = ['any'];
+          return;
+        }
+
+        // ANY を解除
+        const anyBtn = document.querySelector(`[data-q="${q}"][data-val="any"]`);
+        if (anyBtn) anyBtn.classList.remove('selected');
+    
+        // 選択トグル
+        el.classList.toggle('selected');
+    
+        // answers を更新
+        const selected = Array.from(document.querySelectorAll(`[data-q="${q}"].selected`))
+          .map(o => o.dataset.val);
+    
+        answers[q] = selected.length > 0 ? selected : [];
+      });
+    });
+    </script>
+  </body>
+</html>
